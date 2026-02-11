@@ -570,6 +570,39 @@
       margin-bottom: 12px;
     }
 
+    /* Section toggle */
+    .section-bar {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .section-btn {
+      background: var(--surface);
+      border: 2px solid var(--glass-border);
+      color: var(--text-dim);
+      padding: 12px 28px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .section-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .section-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+      border-color: var(--accent);
+      color: #818cf8;
+      box-shadow: 0 0 24px var(--accent-glow);
+    }
+
     .question-text {
       font-size: 1.25rem;
       font-weight: 700;
@@ -608,28 +641,21 @@
 <body>
   <div class="app">
     <header>
-      <h1>🌍 Capitales & Drapeaux</h1>
-      <p>Révise les capitales et drapeaux du monde entier</p>
+      <h1>🌍 Révision Géographie</h1>
+      <p>Capitales, drapeaux, montagnes, fleuves, mers & océans</p>
     </header>
 
-    <!-- Mode selector -->
-    <div class="mode-bar">
-      <button class="mode-btn active" data-mode="flashcard">📇 Flashcards</button>
-      <button class="mode-btn" data-mode="quiz-capital">🏛️ Quiz Capitales</button>
-      <button class="mode-btn" data-mode="quiz-flag">🏴 Quiz Drapeaux</button>
-      <button class="mode-btn" data-mode="map-capital">🗺️ Map → Capitale</button>
-      <button class="mode-btn" data-mode="map-country">📍 Map → Pays</button>
+    <!-- Section toggle -->
+    <div class="section-bar">
+      <button class="section-btn active" data-section="pays">🏛️ Pays & Capitales</button>
+      <button class="section-btn" data-section="geo">⛰️ Géographie</button>
     </div>
 
-    <!-- Continent filter -->
-    <div class="filter-bar">
-      <button class="filter-btn active" data-continent="all">🌐 Tous</button>
-      <button class="filter-btn" data-continent="Europe">🇪🇺 Europe</button>
-      <button class="filter-btn" data-continent="Afrique">🌍 Afrique</button>
-      <button class="filter-btn" data-continent="Asie">🌏 Asie</button>
-      <button class="filter-btn" data-continent="Amériques">🌎 Amériques</button>
-      <button class="filter-btn" data-continent="Océanie">🏝️ Océanie</button>
-    </div>
+    <!-- Mode selector -->
+    <div class="mode-bar" id="mode-bar"></div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar"></div>
 
     <!-- Main content area -->
     <div id="main-content"></div>
@@ -844,10 +870,75 @@
 
     const flagUrl = code => `https://flagcdn.com/w320/${code}.png`;
 
+    // ===== GEOGRAPHY DATA =====
+    const ALL_GEO = [
+      // MONTAGNES
+      { name: "Everest", type: "montagne", detail: "8 849 m", lat: 27.99, lng: 86.93, zoom: 7 },
+      { name: "K2", type: "montagne", detail: "8 611 m", lat: 35.88, lng: 76.51, zoom: 7 },
+      { name: "Kangchenjunga", type: "montagne", detail: "8 586 m", lat: 27.70, lng: 88.15, zoom: 7 },
+      { name: "Mont Blanc", type: "montagne", detail: "4 808 m", lat: 45.83, lng: 6.86, zoom: 8 },
+      { name: "Kilimandjaro", type: "montagne", detail: "5 895 m", lat: -3.07, lng: 37.35, zoom: 7 },
+      { name: "Denali", type: "montagne", detail: "6 190 m", lat: 63.07, lng: -151.01, zoom: 6 },
+      { name: "Aconcagua", type: "montagne", detail: "6 961 m", lat: -32.65, lng: -70.01, zoom: 7 },
+      { name: "Elbrouz", type: "montagne", detail: "5 642 m", lat: 43.35, lng: 42.44, zoom: 7 },
+      { name: "Mont Fuji", type: "montagne", detail: "3 776 m", lat: 35.36, lng: 138.73, zoom: 8 },
+      { name: "Mont Kenya", type: "montagne", detail: "5 199 m", lat: -0.15, lng: 37.31, zoom: 7 },
+      { name: "Cervin (Matterhorn)", type: "montagne", detail: "4 478 m", lat: 45.98, lng: 7.66, zoom: 9 },
+      { name: "Annapurna", type: "montagne", detail: "8 091 m", lat: 28.60, lng: 83.82, zoom: 7 },
+      { name: "Mont Vinson", type: "montagne", detail: "4 892 m", lat: -78.53, lng: -85.62, zoom: 4 },
+      { name: "Puncak Jaya", type: "montagne", detail: "4 884 m", lat: -4.08, lng: 137.16, zoom: 7 },
+      { name: "Mont Logan", type: "montagne", detail: "5 959 m", lat: 60.57, lng: -140.41, zoom: 6 },
+      { name: "Ben Nevis", type: "montagne", detail: "1 345 m", lat: 56.80, lng: -5.00, zoom: 8 },
+      { name: "Etna", type: "montagne", detail: "3 357 m", lat: 37.75, lng: 14.99, zoom: 8 },
+      { name: "Piton de la Fournaise", type: "montagne", detail: "2 632 m", lat: -21.24, lng: 55.71, zoom: 9 },
+      // FLEUVES
+      { name: "Nil", type: "fleuve", detail: "6 650 km", lat: 25.0, lng: 32.5, zoom: 4 },
+      { name: "Amazone", type: "fleuve", detail: "6 400 km", lat: -3.0, lng: -60.0, zoom: 4 },
+      { name: "Yangtsé", type: "fleuve", detail: "6 300 km", lat: 30.8, lng: 111.3, zoom: 4 },
+      { name: "Mississippi", type: "fleuve", detail: "6 275 km", lat: 38.0, lng: -90.2, zoom: 4 },
+      { name: "Ienisseï", type: "fleuve", detail: "5 540 km", lat: 58.0, lng: 92.5, zoom: 3 },
+      { name: "Huang He", type: "fleuve", detail: "5 464 km", lat: 37.8, lng: 110.0, zoom: 4 },
+      { name: "Congo", type: "fleuve", detail: "4 700 km", lat: -4.3, lng: 15.3, zoom: 4 },
+      { name: "Mékong", type: "fleuve", detail: "4 350 km", lat: 16.0, lng: 105.8, zoom: 4 },
+      { name: "Niger", type: "fleuve", detail: "4 184 km", lat: 11.9, lng: 3.5, zoom: 4 },
+      { name: "Volga", type: "fleuve", detail: "3 530 km", lat: 53.0, lng: 49.0, zoom: 4 },
+      { name: "Danube", type: "fleuve", detail: "2 850 km", lat: 47.0, lng: 19.0, zoom: 4 },
+      { name: "Rhin", type: "fleuve", detail: "1 230 km", lat: 50.9, lng: 6.9, zoom: 5 },
+      { name: "Gange", type: "fleuve", detail: "2 525 km", lat: 25.3, lng: 83.0, zoom: 5 },
+      { name: "Loire", type: "fleuve", detail: "1 006 km", lat: 47.3, lng: 0.7, zoom: 6 },
+      { name: "Seine", type: "fleuve", detail: "777 km", lat: 48.9, lng: 2.3, zoom: 7 },
+      { name: "Rh\u00f4ne", type: "fleuve", detail: "812 km", lat: 45.7, lng: 4.8, zoom: 6 },
+      { name: "Tamise", type: "fleuve", detail: "346 km", lat: 51.5, lng: -0.1, zoom: 7 },
+      // MERS
+      { name: "M\u00e9diterran\u00e9e", type: "mer", detail: "Atlantique", lat: 35.5, lng: 18.0, zoom: 4 },
+      { name: "Mer Rouge", type: "mer", detail: "Indien", lat: 20.0, lng: 38.5, zoom: 5 },
+      { name: "Mer Noire", type: "mer", detail: "Atlantique", lat: 43.0, lng: 35.0, zoom: 5 },
+      { name: "Mer Caspienne", type: "mer", detail: "Mer ferm\u00e9e", lat: 41.7, lng: 51.0, zoom: 4 },
+      { name: "Mer Baltique", type: "mer", detail: "Atlantique", lat: 59.0, lng: 21.0, zoom: 4 },
+      { name: "Mer du Nord", type: "mer", detail: "Atlantique", lat: 56.0, lng: 3.3, zoom: 4 },
+      { name: "Mer d'Arabie", type: "mer", detail: "Indien", lat: 15.0, lng: 65.0, zoom: 4 },
+      { name: "Mer de Chine m\u00e9ridionale", type: "mer", detail: "Pacifique", lat: 12.0, lng: 113.0, zoom: 4 },
+      { name: "Mer du Japon", type: "mer", detail: "Pacifique", lat: 40.0, lng: 135.0, zoom: 4 },
+      { name: "Mer des Cara\u00efbes", type: "mer", detail: "Atlantique", lat: 15.0, lng: -75.0, zoom: 4 },
+      { name: "Mer de Corail", type: "mer", detail: "Pacifique", lat: -18.0, lng: 155.0, zoom: 4 },
+      { name: "Manche", type: "mer", detail: "Atlantique", lat: 50.2, lng: -1.5, zoom: 6 },
+      { name: "Mer de Barents", type: "mer", detail: "Arctique", lat: 75.0, lng: 40.0, zoom: 3 },
+      // OCÉANS
+      { name: "Oc\u00e9an Pacifique", type: "ocean", detail: "165,2 M km\u00b2", lat: 0, lng: -160, zoom: 2 },
+      { name: "Oc\u00e9an Atlantique", type: "ocean", detail: "106,5 M km\u00b2", lat: 10, lng: -30, zoom: 2 },
+      { name: "Oc\u00e9an Indien", type: "ocean", detail: "73,6 M km\u00b2", lat: -15, lng: 70, zoom: 2 },
+      { name: "Oc\u00e9an Arctique", type: "ocean", detail: "14,1 M km\u00b2", lat: 85, lng: 0, zoom: 2 },
+      { name: "Oc\u00e9an Austral", type: "ocean", detail: "20,3 M km\u00b2", lat: -65, lng: 0, zoom: 2 },
+    ];
+
+    const GEO_TYPES = { montagne: '\u26f0\ufe0f', fleuve: '\ud83c\udf0a', mer: '\ud83c\udf0a', ocean: '\ud83c\udf0d' };
+
     // ===== STATE =====
+    let currentSection = 'pays';
     let currentMode = 'flashcard';
-    let currentContinent = 'all';
+    let currentFilter = 'all';
     let filteredCountries = [];
+    let filteredGeo = [];
     let shuffled = [];
     let idx = 0;
     let revealed = false;
@@ -855,36 +946,88 @@
     let total = 0;
     let answered = false;
 
+    const PAYS_MODES = [
+      { id: 'flashcard', label: '\ud83d\udcc7 Flashcards' },
+      { id: 'quiz-capital', label: '\ud83c\udfdb\ufe0f Quiz Capitales' },
+      { id: 'quiz-flag', label: '\ud83c\udff4 Quiz Drapeaux' },
+      { id: 'map-capital', label: '\ud83d\uddfa\ufe0f Map \u2192 Capitale' },
+      { id: 'map-country', label: '\ud83d\udccd Map \u2192 Pays' },
+    ];
+    const GEO_MODES = [
+      { id: 'geo-flash', label: '\ud83d\udcc7 Flashcards' },
+      { id: 'geo-map-name', label: '\ud83d\uddfa\ufe0f Carte \u2192 Nom' },
+      { id: 'geo-name-detail', label: '\ud83d\udcdd Nom \u2192 D\u00e9tail' },
+    ];
+    const PAYS_FILTERS = [
+      { id: 'all', label: '\ud83c\udf10 Tous' }, { id: 'Europe', label: '\ud83c\uddea\ud83c\uddfa Europe' }, { id: 'Afrique', label: '\ud83c\udf0d Afrique' },
+      { id: 'Asie', label: '\ud83c\udf0f Asie' }, { id: 'Am\u00e9riques', label: '\ud83c\udf0e Am\u00e9riques' }, { id: 'Oc\u00e9anie', label: '\ud83c\udfdd\ufe0f Oc\u00e9anie' },
+    ];
+    const GEO_FILTERS = [
+      { id: 'all', label: '\ud83c\udf10 Tous' }, { id: 'montagne', label: '\u26f0\ufe0f Montagnes' }, { id: 'fleuve', label: '\ud83c\udfe2 Fleuves' },
+      { id: 'mer', label: '\ud83c\udf0a Mers' }, { id: 'ocean', label: '\ud83c\udf0d Oc\u00e9ans' },
+    ];
+
     // ===== INIT =====
-    function init() {
-      // Mode buttons
-      document.querySelectorAll('.mode-btn').forEach(btn => {
+    function buildUI() {
+      const modeBar = document.getElementById('mode-bar');
+      const filterBar = document.querySelector('.filter-bar');
+      const modes = currentSection === 'pays' ? PAYS_MODES : GEO_MODES;
+      const filters = currentSection === 'pays' ? PAYS_FILTERS : GEO_FILTERS;
+
+      modeBar.innerHTML = modes.map((m, i) =>
+        `<button class="mode-btn${i === 0 ? ' active' : ''}" data-mode="${m.id}">${m.label}</button>`
+      ).join('');
+      filterBar.innerHTML = filters.map((f, i) =>
+        `<button class="filter-btn${i === 0 ? ' active' : ''}" data-filter="${f.id}">${f.label}</button>`
+      ).join('');
+
+      currentMode = modes[0].id;
+      currentFilter = 'all';
+
+      modeBar.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+          modeBar.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentMode = btn.dataset.mode;
           resetAndRender();
         });
       });
-
-      // Filter buttons
-      document.querySelectorAll('.filter-btn').forEach(btn => {
+      filterBar.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          currentContinent = btn.dataset.continent;
+          currentFilter = btn.dataset.filter;
           resetAndRender();
         });
       });
+    }
 
+    function init() {
+      document.querySelectorAll('.section-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.section-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentSection = btn.dataset.section;
+          buildUI();
+          resetAndRender();
+        });
+      });
+      buildUI();
       resetAndRender();
     }
 
     function resetAndRender() {
-      filteredCountries = currentContinent === 'all'
-        ? [...ALL_COUNTRIES]
-        : ALL_COUNTRIES.filter(c => c.continent === currentContinent);
-      shuffled = shuffle([...filteredCountries]);
+      if (currentSection === 'pays') {
+        filteredCountries = currentFilter === 'all'
+          ? [...ALL_COUNTRIES]
+          : ALL_COUNTRIES.filter(c => c.continent === currentFilter);
+        shuffled = shuffle([...filteredCountries]);
+      } else {
+        filteredGeo = currentFilter === 'all'
+          ? [...ALL_GEO]
+          : ALL_GEO.filter(g => g.type === currentFilter);
+        shuffled = shuffle([...filteredGeo]);
+      }
       idx = 0;
       score = 0;
       total = 0;
@@ -902,7 +1045,8 @@
     }
 
     function pickDistractors(correct, pool, n = 3) {
-      const others = pool.filter(c => c.code !== correct.code);
+      const key = correct.code ? 'code' : 'name';
+      const others = pool.filter(c => c[key] !== correct[key]);
       const picks = [];
       const used = new Set();
       while (picks.length < n && picks.length < others.length) {
@@ -1000,12 +1144,16 @@
     // ===== RENDER =====
     function render() {
       const el = document.getElementById('main-content');
-      if (currentMode !== 'map-capital' && currentMode !== 'map-country') destroyMap();
+      const mapModes = ['map-capital', 'map-country', 'geo-map-name', 'geo-flash'];
+      if (!mapModes.includes(currentMode)) destroyMap();
       if (currentMode === 'flashcard') renderFlashcard(el);
       else if (currentMode === 'quiz-capital') renderQuizCapital(el);
       else if (currentMode === 'quiz-flag') renderQuizFlag(el);
       else if (currentMode === 'map-capital') renderMapCapital(el);
       else if (currentMode === 'map-country') renderMapCountry(el);
+      else if (currentMode === 'geo-flash') renderGeoFlash(el);
+      else if (currentMode === 'geo-map-name') renderGeoMapName(el);
+      else if (currentMode === 'geo-name-detail') renderGeoNameDetail(el);
     }
 
     // --- FLASHCARD ---
@@ -1238,6 +1386,137 @@
       fb.innerHTML = answer === correct
         ? '<div class="feedback correct-fb">✅ Correct !</div>'
         : `<div class="feedback wrong-fb">❌ C\'était ${correct}</div>`;
+      fb.innerHTML += '<button class="next-btn" onclick="nextQuiz()">Suivant →</button>';
+    };
+
+    // ===== GEO MODES =====
+    function geoTypeLabel(t) {
+      return { montagne: '⛰️ Montagne', fleuve: '🏞️ Fleuve', mer: '🌊 Mer', ocean: '🌍 Océan' }[t] || t;
+    }
+    function geoDetailLabel(t) {
+      return { montagne: 'Altitude', fleuve: 'Longueur', mer: 'Océan rattaché', ocean: 'Superficie' }[t] || 'Détail';
+    }
+
+    // --- GEO FLASHCARD ---
+    function renderGeoFlash(el) {
+      if (shuffled.length === 0) { el.innerHTML = '<div class="card"><p>Aucun élément.</p></div>'; return; }
+      const g = shuffled[idx];
+      el.innerHTML = `
+        <div class="shuffle-indicator">🔀 Ordre aléatoire</div>
+        <div class="card">
+          <div style="font-size:1.1rem;color:#818cf8;margin-bottom:6px">${geoTypeLabel(g.type)}</div>
+          <div class="map-wrapper" id="quiz-map"></div>
+          <h2 style="margin:12px 0 4px">${g.name}</h2>
+          <p style="color:var(--text-dim)">${geoDetailLabel(g.type)} : <strong id="geo-detail" style="visibility:hidden;color:#818cf8">${g.detail}</strong></p>
+          <button class="reveal-btn" onclick="document.getElementById('geo-detail').style.visibility='visible'; this.style.display='none'">Afficher le détail</button>
+          <div class="nav-controls">
+            <button class="nav-btn" onclick="idx=(idx-1+shuffled.length)%shuffled.length; render()">‹</button>
+            <span class="counter">${idx + 1} / ${shuffled.length}</span>
+            <button class="nav-btn" onclick="idx=(idx+1)%shuffled.length; render()">›</button>
+          </div>
+        </div>
+      `;
+      createMapGeo('quiz-map', g.lat, g.lng, g.zoom, g.name);
+    }
+
+    function createMapGeo(containerId, lat, lng, zoom, label) {
+      destroyMap();
+      requestAnimationFrame(() => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        mapInstance = L.map(containerId, {
+          zoomControl: true, attributionControl: false,
+          dragging: true, scrollWheelZoom: true,
+          doubleClickZoom: true, touchZoom: true
+        }).setView([lat, lng], zoom);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+          subdomains: 'abcd', maxZoom: 19
+        }).addTo(mapInstance);
+        const m = L.circleMarker([lat, lng], {
+          radius: 8, color: '#fff', fillColor: '#6366f1', fillOpacity: 1, weight: 2
+        }).addTo(mapInstance);
+        if (label) m.bindTooltip(label, { permanent: true, direction: 'top', offset: [0, -10], className: 'map-label' }).openTooltip();
+      });
+    }
+
+    // --- GEO MAP → NOM ---
+    function renderGeoMapName(el) {
+      destroyMap();
+      if (shuffled.length === 0) { el.innerHTML = '<div class="card"><p>Aucun élément.</p></div>'; return; }
+      if (idx >= shuffled.length) { renderEnd(el); return; }
+      const g = shuffled[idx];
+      const pool = currentFilter === 'all' ? ALL_GEO : ALL_GEO.filter(x => x.type === g.type);
+      const distractors = pickDistractors(g, pool);
+      const options = shuffle([g, ...distractors]);
+      el.innerHTML = `
+        <div class="score-bar">✅ ${score} / ${total} <div class="progress-bar"><div class="progress-fill" style="width:${total ? Math.round(score / total * 100) : 0}%"></div></div> ${total ? Math.round(score / total * 100) : 0}%</div>
+        <div class="card">
+          <div class="question-text">Quel est cet élément géographique ?</div>
+          <div class="question-sub">📍 ${geoTypeLabel(g.type)} — Identifiez sur la carte</div>
+          <div class="map-wrapper" id="quiz-map"></div>
+          <div class="quiz-options" id="quiz-opts">
+            ${options.map(o => `<button class="quiz-opt" data-answer="${o.name}" data-correct="${g.name}" onclick="answerGeoMapName(this)">${o.name}</button>`).join('')}
+          </div>
+          <div id="feedback"></div>
+        </div>
+      `;
+      createMapGeo('quiz-map', g.lat, g.lng, g.zoom);
+    }
+
+    window.answerGeoMapName = (btn) => {
+      if (answered) return;
+      answered = true; total++;
+      const answer = btn.dataset.answer;
+      const correct = btn.dataset.correct;
+      if (answer === correct) score++;
+      document.querySelectorAll('#quiz-opts .quiz-opt').forEach(b => {
+        if (b.dataset.answer === correct) b.classList.add('correct');
+        else if (b === btn && answer !== correct) b.classList.add('wrong');
+      });
+      const fb = document.getElementById('feedback');
+      fb.innerHTML = answer === correct
+        ? '<div class="feedback correct-fb">✅ Correct !</div>'
+        : `<div class="feedback wrong-fb">❌ C\\'était ${correct}</div>`;
+      fb.innerHTML += '<button class="next-btn" onclick="nextQuiz()">Suivant →</button>';
+    };
+
+    // --- GEO NOM → DÉTAIL ---
+    function renderGeoNameDetail(el) {
+      destroyMap();
+      if (shuffled.length === 0) { el.innerHTML = '<div class="card"><p>Aucun élément.</p></div>'; return; }
+      if (idx >= shuffled.length) { renderEnd(el); return; }
+      const g = shuffled[idx];
+      const pool = currentFilter === 'all' ? ALL_GEO : ALL_GEO.filter(x => x.type === g.type);
+      const distractors = pickDistractors(g, pool);
+      const options = shuffle([g, ...distractors]);
+      el.innerHTML = `
+        <div class="score-bar">✅ ${score} / ${total} <div class="progress-bar"><div class="progress-fill" style="width:${total ? Math.round(score / total * 100) : 0}%"></div></div> ${total ? Math.round(score / total * 100) : 0}%</div>
+        <div class="card">
+          <div style="font-size:1.1rem;color:#818cf8;margin-bottom:6px">${geoTypeLabel(g.type)}</div>
+          <div class="question-text">${g.name}</div>
+          <div class="question-sub">${geoDetailLabel(g.type)} ?</div>
+          <div class="quiz-options" id="quiz-opts">
+            ${options.map(o => `<button class="quiz-opt" data-answer="${o.detail}" data-correct="${g.detail}" onclick="answerGeoDetail(this)">${o.detail}</button>`).join('')}
+          </div>
+          <div id="feedback"></div>
+        </div>
+      `;
+    }
+
+    window.answerGeoDetail = (btn) => {
+      if (answered) return;
+      answered = true; total++;
+      const answer = btn.dataset.answer;
+      const correct = btn.dataset.correct;
+      if (answer === correct) score++;
+      document.querySelectorAll('#quiz-opts .quiz-opt').forEach(b => {
+        if (b.dataset.answer === correct) b.classList.add('correct');
+        else if (b === btn && answer !== correct) b.classList.add('wrong');
+      });
+      const fb = document.getElementById('feedback');
+      fb.innerHTML = answer === correct
+        ? '<div class="feedback correct-fb">✅ Correct !</div>'
+        : `<div class="feedback wrong-fb">❌ C\\'était ${correct}</div>`;
       fb.innerHTML += '<button class="next-btn" onclick="nextQuiz()">Suivant →</button>';
     };
 
